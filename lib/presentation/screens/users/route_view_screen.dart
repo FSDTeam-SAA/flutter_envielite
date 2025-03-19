@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
 import 'package:tour_guide/core/controller/admin_controller.dart';
 import 'package:tour_guide/core/controller/audio_service.dart';
 import 'package:tour_guide/helper/location_services.dart';
+import 'package:get/get.dart';
 import 'package:tour_guide/model/tour_data.dart';
+import 'package:tour_guide/presentation/screens/users/audio_player.dart';
 
 class RouteViewScreen extends StatelessWidget {
   final LocationService _locationService = Get.find();
@@ -18,7 +19,7 @@ class RouteViewScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Route: ${_adminController.selectedRoute.value}'),
-        centerTitle: true, // Center the title for better UI
+        centerTitle: true,
       ),
       body: _buildContent(),
     );
@@ -30,7 +31,6 @@ class RouteViewScreen extends StatelessWidget {
         _adminController.selectedRoute.value,
       ),
       builder: (context, snapshot) {
-        // Show a loading indicator while data is being fetched
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: Column(
@@ -47,7 +47,6 @@ class RouteViewScreen extends StatelessWidget {
           );
         }
 
-        // Show an error message if data fetching fails
         if (snapshot.hasError) {
           return Center(
             child: Column(
@@ -64,7 +63,6 @@ class RouteViewScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    // Retry fetching data
                     _adminController.loadSavedData();
                   },
                   child: const Text('Retry'),
@@ -77,9 +75,6 @@ class RouteViewScreen extends StatelessWidget {
         final routeData = snapshot.data ?? {};
         final langData = routeData[_adminController.selectedLanguage.value];
 
-        print("Check language Data -> $langData");
-
-        // Show a friendly message if no data is available
         if (routeData.isEmpty || langData == null) {
           return Center(
             child: Column(
@@ -94,7 +89,6 @@ class RouteViewScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate back or perform another action
                     Get.back();
                   },
                   child: const Text('Go Back'),
@@ -104,21 +98,18 @@ class RouteViewScreen extends StatelessWidget {
           );
         }
 
-        // Display the tour details if data is available
         return _buildTourDetails(langData);
       },
     );
   }
 
   Widget _buildTourDetails(Map<String, dynamic> langData) {
-    // Prepare the list of POIs directly from the route data
     final pois =
         (langData['pois'] as List?)?.map((poiData) {
           return TourPOI.fromJson(poiData);
         }).toList() ??
         [];
 
-    // Handle case where there are no POIs
     if (pois.isEmpty) {
       return Center(
         child: Column(
@@ -140,11 +131,11 @@ class RouteViewScreen extends StatelessWidget {
       );
     }
 
-    // Update the controller's POIs map
     _adminController.poisStore.clear();
     for (final poi in pois) {
       _adminController.poisStore[poi.name] = poi;
     }
+    
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -155,20 +146,20 @@ class RouteViewScreen extends StatelessWidget {
             'Points of Interest',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          // play and pause audio and other featues show in here
           const SizedBox(height: 20),
+
+          AudioPlayerWidget(),
+
           Expanded(
             child: Obx(() {
               final currentPosition = _locationService.currentPosition.value;
               final isTracking = _locationService.isTracking;
 
               return ListView.builder(
-                itemCount:
-                    pois.isEmpty ? 0 : pois.length * 2 - 1, // Handle empty case
+                itemCount: pois.isEmpty ? 0 : pois.length * 2 - 1,
                 itemBuilder: (context, index) {
                   if (pois.isEmpty) return const SizedBox.shrink();
 
-                  // Rest of your ListView.builder logic
                   if (index.isEven) {
                     final poiIndex = index ~/ 2;
                     final poi = pois[poiIndex];
@@ -213,9 +204,7 @@ class RouteViewScreen extends StatelessWidget {
                         ),
                       ),
                     );
-                  }
-                  // If the index is odd, show the distance between two POIs
-                  else {
+                  } else {
                     final firstPoiIndex = (index - 1) ~/ 2;
                     if (firstPoiIndex >= pois.length - 1) {
                       return const SizedBox.shrink();

@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/core/controller/admin_controller.dart';
+import 'package:tour_guide/core/controller/audio_service.dart';
 import 'package:tour_guide/model/tour_data.dart';
 
 class LocationService extends GetxService {
-  final AdminController _adminController = Get.find<AdminController>();
+  final AdminController _adminController;
+  final AudioService _audioService; // Add AudioService as a dependency
+
+  LocationService(this._adminController, this._audioService); // Constructor
+
   Stream<Position>? _locationStream;
   final RxBool _isTracking = false.obs;
   Timer? _proximityCheckTimer;
@@ -174,8 +179,9 @@ class LocationService extends GetxService {
     final poi = _alertQueue.removeFirst();
     _isShowingAlert.value = true;
 
-    _adminController.audioService.playAudio(poi.audio);
-    
+    // Play audio using AudioService
+    _audioService.playAudio(poi.audio);
+
     Get.snackbar(
       'Nearby POI Alert!',
       'You\'re within 300m of ${poi.name}',

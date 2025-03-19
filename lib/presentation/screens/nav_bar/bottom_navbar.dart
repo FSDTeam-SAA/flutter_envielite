@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tour_guide/core/controller/bottom_nav_controller.dart';
-import 'package:tour_guide/helper/platform_check_helper.dart';
-import 'package:tour_guide/presentation/screens/admin/admin_panal.dart';
-import 'package:tour_guide/presentation/screens/users/route_select_screen.dart';
 
 class BottomNavbar extends StatelessWidget {
   const BottomNavbar({super.key});

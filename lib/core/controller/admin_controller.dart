@@ -11,8 +11,7 @@ import 'package:tour_guide/helper/local_store_helper.dart';
 import 'package:tour_guide/model/tour_data.dart';
 
 class AdminController extends GetxController {
-  final AudioService audioService = AudioService();
-  // final AudioService audioService = Get.find<AudioService>();
+  final AudioService audioService = Get.put(AudioService());
 
   // Predefined routes and languages
   final List<String> predefinedRoutes = [
