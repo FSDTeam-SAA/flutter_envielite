@@ -13,9 +13,8 @@ import 'package:tour_guide/service/app_expire.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    bool isAppExpired = AppExpire.isAppExpired();
     // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp(isExpired: isAppExpired,));
+    await tester.pumpWidget(MyApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

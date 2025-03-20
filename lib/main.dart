@@ -13,20 +13,17 @@ import 'package:tour_guide/service/expiry_date.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  bool isAppExpired = AppExpire.isAppExpired();
-
   // setUrlStrategy(PathUrlStrategy());
-  runApp(MyApp(isExpired: isAppExpired));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool isExpired;
-  const MyApp({super.key, required this.isExpired});
+
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    print("isExpired : $isExpired");
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       initialBinding: RouteBinding(),
@@ -64,7 +61,7 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.blackWhiteTheme,
       // home: RouteSelectScreen(),
       // home: BottomNavbar(),
-      home: isExpired ? ExpiredScreen() : BottomNavbar(),
+      home: BottomNavbar(),
     );
   }
 }
