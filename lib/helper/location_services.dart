@@ -185,7 +185,7 @@ class LocationService extends GetxService {
     Get.snackbar(
       'Nearby POI Alert!',
       'You\'re within 300m of ${poi.name}',
-      snackPosition: SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.TOP,
       duration: Duration(seconds: 5),
       isDismissible: false,
     ).future.then((_) {

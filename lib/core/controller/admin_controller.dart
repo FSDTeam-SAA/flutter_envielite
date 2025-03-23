@@ -88,6 +88,7 @@ class AdminController extends GetxController {
   @override
   void onClose() {
     _searchDebounce?.cancel();
+    clearTempData();
     super.onClose();
   }
 
@@ -101,37 +102,53 @@ class AdminController extends GetxController {
 
   // Load saved data from local storage
   void loadSavedData() async {
-  if (selectedRoute.value.isEmpty || selectedLanguage.value.isEmpty) {
-    clearTempData();
-    return;
-  }
-
-  final data = await LocalStorageService.getTourData();
-  final routeData = data[selectedRoute.value];
-  final languageData = routeData?[selectedLanguage.value];
-
-  if (languageData != null) {
-    pois.value = (languageData['pois'] as List?)?.map((poi) => TourPOI.fromJson(poi)).toList() ?? [];
-    selectedIntroAudio.value = languageData['intro'] ?? '';
-
-    // Initialize search-related lists based on the number of POIs
-    searchControllers.value = List.generate(pois.length, (_) => TextEditingController());
-    latControllers.value = List.generate(pois.length, (_) => TextEditingController());
-    lngControllers.value = List.generate(pois.length, (_) => TextEditingController());
-    audioPaths.value = List.generate(pois.length, (_) => '');
-    searchResults.value = List.generate(pois.length, (_) => <Map<String, dynamic>>[].obs);
-    searchLoadingStates.value = List.generate(pois.length, (_) => false.obs);
-
-    for (int i = 0; i < pois.length; i++) {
-      searchControllers[i].text = pois[i].name;
-      latControllers[i].text = pois[i].lat.toString();
-      lngControllers[i].text = pois[i].lng.toString();
-      audioPaths[i] = pois[i].audio;
+    if (selectedRoute.value.isEmpty || selectedLanguage.value.isEmpty) {
+      clearTempData();
+      return;
     }
-  } else {
-    clearTempData();
+
+    final data = await LocalStorageService.getTourData();
+    final routeData = data[selectedRoute.value];
+    final languageData = routeData?[selectedLanguage.value];
+
+    if (languageData != null) {
+      pois.value =
+          (languageData['pois'] as List?)
+              ?.map((poi) => TourPOI.fromJson(poi))
+              .toList() ??
+          [];
+      selectedIntroAudio.value = languageData['intro'] ?? '';
+
+      // Initialize search-related lists based on the number of POIs
+      searchControllers.value = List.generate(
+        pois.length,
+        (_) => TextEditingController(),
+      );
+      latControllers.value = List.generate(
+        pois.length,
+        (_) => TextEditingController(),
+      );
+      lngControllers.value = List.generate(
+        pois.length,
+        (_) => TextEditingController(),
+      );
+      audioPaths.value = List.generate(pois.length, (_) => '');
+      searchResults.value = List.generate(
+        pois.length,
+        (_) => <Map<String, dynamic>>[].obs,
+      );
+      searchLoadingStates.value = List.generate(pois.length, (_) => false.obs);
+
+      for (int i = 0; i < pois.length; i++) {
+        searchControllers[i].text = pois[i].name;
+        latControllers[i].text = pois[i].lat.toString();
+        lngControllers[i].text = pois[i].lng.toString();
+        audioPaths[i] = pois[i].audio;
+      }
+    } else {
+      clearTempData();
+    }
   }
-}
 
   // Search locations using OpenStreetMap API
   Future<void> searchLocations(String query, int index) async {
@@ -141,9 +158,9 @@ class AdminController extends GetxController {
     }
 
     if (index >= searchLoadingStates.length || index >= searchResults.length) {
-    debugPrint('Invalid index: $index');
-    return;
-  }
+      debugPrint('Invalid index: $index');
+      return;
+    }
 
     searchLoadingStates[index].value = true;
 
@@ -244,7 +261,7 @@ class AdminController extends GetxController {
   //       Get.snackbar(
   //         'Permission Required',
   //         'Storage permission is needed to select audio files.',
-  //         snackPosition: SnackPosition.BOTTOM,
+  //         snackPosition: SnackPosition.TOP,
   //       );
   //       return;
   //     }
@@ -292,28 +309,30 @@ class AdminController extends GetxController {
 
   // Add point of interest
   void addPointOfInterest() {
-  if (selectedRoute.value.isEmpty) {
-    Get.snackbar(
-      'Error',
-      'Please select a route before adding a POI.',
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    return;
+    if (selectedRoute.value.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Please select a route before adding a POI.',
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
+
+    // Add a new POI
+    pois.add(TourPOI(lat: 0.0, lng: 0.0, audio: '', name: ''));
+
+    // Add corresponding entries to search-related lists
+    searchControllers.add(TextEditingController());
+    latControllers.add(TextEditingController());
+    lngControllers.add(TextEditingController());
+    audioPaths.add('');
+    searchResults.add(
+      <Map<String, dynamic>>[].obs,
+    ); // Add new RxList for search results
+    searchLoadingStates.add(false.obs); // Add new loading state
+
+    debugPrint('Added new POI. Total POIs: ${pois.length}');
   }
-
-  // Add a new POI
-  pois.add(TourPOI(lat: 0.0, lng: 0.0, audio: '', name: ''));
-
-  // Add corresponding entries to search-related lists
-  searchControllers.add(TextEditingController());
-  latControllers.add(TextEditingController());
-  lngControllers.add(TextEditingController());
-  audioPaths.add('');
-  searchResults.add(<Map<String, dynamic>>[].obs); // Add new RxList for search results
-  searchLoadingStates.add(false.obs); // Add new loading state
-
-  debugPrint('Added new POI. Total POIs: ${pois.length}');
-}
 
   // Remove point of interest
   void removePointOfInterest(int index) {
@@ -361,7 +380,7 @@ class AdminController extends GetxController {
   }
 
   // Save changes
-  void saveChanges() {
+  void saveChanges() async {
     // Validate that all POIs have valid data
     for (int i = 0; i < pois.length; i++) {
       if (latControllers[i].text.isEmpty ||
@@ -370,11 +389,35 @@ class AdminController extends GetxController {
         Get.snackbar(
           'Error',
           'Please fill out all fields for POI ${i + 1}.',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      // Check if the audio file is set for each POI
+      if (pois[i].audio.isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Please select an audio file for POI ${i + 1}.',
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      // check if the inro audio file is set
+      if (selectedIntroAudio.value.isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Please select an intro audio file.',
+          snackPosition: SnackPosition.TOP,
         );
         return;
       }
     }
+
+    // show confirmation dialog
+    bool confirmSave = await showConfirmationDialog();
+    if (!confirmSave) return;
 
     // Move POIs from temporary list to main list
     pois.addAll(tempPois);
@@ -386,8 +429,38 @@ class AdminController extends GetxController {
     Get.snackbar(
       'Success',
       'Changes saved successfully!',
-      snackPosition: SnackPosition.BOTTOM,
+      snackPosition: SnackPosition.TOP,
     );
+  }
+
+  // show confirmation dialog
+  Future<bool> showConfirmationDialog() async {
+    bool confirmed = false;
+
+    await Get.dialog(
+      AlertDialog(
+        title: Text('Discard Changes?'),
+        content: Text('Are you sure you want to discard the changes?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              confirmed = true;
+              Get.back();
+            },
+            child: Text('Yes'),
+          ),
+          TextButton(
+            onPressed: () {
+              confirmed = false;
+              Get.back();
+            },
+            child: Text('No'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmed;
   }
 
   void clearTempData() {
